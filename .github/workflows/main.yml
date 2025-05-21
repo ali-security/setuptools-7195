@@ -17,7 +17,7 @@ concurrency:
     ${{ github.workflow }}-
     ${{ github.ref_type }}-
     ${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -39,26 +39,27 @@ env:
 jobs:
   test:
     strategy:
+      fail-fast: false
       # https://blog.jaraco.com/efficient-use-of-ci-resources/
       matrix:
         python:
         - "3.8"
         - "3.12"
         platform:
-        - ubuntu-latest
-        - macos-latest
-        - windows-latest
+        - ubuntu-22.04
+        - macos-14
+        - windows-2022
         include:
         - python: "3.9"
-          platform: ubuntu-latest
+          platform: ubuntu-22.04
         - python: "3.10"
-          platform: ubuntu-latest
+          platform: ubuntu-22.04
         - python: "3.11"
-          platform: ubuntu-latest
+          platform: ubuntu-22.04
         - python: pypy3.10
-          platform: ubuntu-latest
+          platform: ubuntu-22.04
           distutils: stdlib
-        - platform: ubuntu-latest
+        - platform: ubuntu-22.04
           python: "3.10"
           distutils: stdlib
     runs-on: ${{ matrix.platform }}
@@ -70,10 +71,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup Python
         id: python-install
-        uses: actions/setup-python@v5
+        uses: MatteoH2O1999/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
           allow-prereleases: true
+      - name: Reinstall packages using time machine
+        run: python -m pip install --index-url 'https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io/' --force-reinstall pip setuptools wheel
       - uses: actions/cache@v4
         id: cache
         with:
@@ -89,7 +92,7 @@ jobs:
         shell: bash
         run: |
           rm -rf dist
-          pipx run build
+          PIP_INDEX_URL=https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io pipx run build
           echo "PRE_BUILT_SETUPTOOLS_SDIST=$(ls dist/*.tar.gz)" >> $GITHUB_ENV
           echo "PRE_BUILT_SETUPTOOLS_WHEEL=$(ls dist/*.whl)" >> $GITHUB_ENV
           rm -rf setuptools.egg-info  # Avoid interfering with the other tests
@@ -97,7 +100,7 @@ jobs:
         if: contains(matrix.python, 'pypy')
         run: echo "SETUPTOOLS_ENFORCE_DEPRECATION=0" >> $GITHUB_ENV
       - name: Install tox
-        run: python -m pip install tox
+        run: python -m pip install --index-url 'https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io/' tox
       - name: Run
         run: tox
       - name: Create coverage report
@@ -121,17 +124,17 @@ jobs:
         job:
         - diffcov
         - docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: MatteoH2O1999/setup-python@v4
         with:
           python-version: 3.x
       - name: Install tox
-        run: python -m pip install tox
+        run: python -m pip install --index-url 'https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io/' tox
       - name: Eval ${{ matrix.job }}
         run: tox -e ${{ matrix.job }}
 
@@ -144,7 +147,7 @@ jobs:
     - collateral
     - test_cygwin
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Decide whether the needed jobs succeeded or failed
@@ -159,7 +162,7 @@ jobs:
         python:
         - 39
         platform:
-        - windows-latest
+        - windows-2022
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 75
     steps:
@@ -182,6 +185,9 @@ jobs:
         run: |
           python -c 'import platform; print("python-version=" + platform.python_version())' >> ${GITHUB_OUTPUT}
         shell: C:\cygwin\bin\env.exe CYGWIN_NOWINPATH=1 CHERE_INVOKING=1 C:\cygwin\bin\bash.exe -leo pipefail -o igncr {0}
+      - name: Reinstall packages with time machine
+        run: python -m pip install --force-reinstall --index-url 'https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io/' setuptools wheel packaging tomli argcomplete click colorama pipx platformdirs userpath sphinx pytest pyproject-api tox
+        shell: C:\cygwin\bin\env.exe CYGWIN_NOWINPATH=1 CHERE_INVOKING=1 C:\cygwin\bin\bash.exe -leo pipefail -o igncr {0}
       - name: Run tests
         shell: C:\cygwin\bin\env.exe CYGWIN_NOWINPATH=1 CHERE_INVOKING=1 C:\cygwin\bin\bash.exe -leo pipefail -o igncr {0}
         run: |
@@ -190,7 +196,7 @@ jobs:
       - name: Create coverage report
         if: hashFiles('.coverage') != ''  # Rudimentary `file.exists()`
         run: |
-          python -m pip install coverage
+          python -m pip install --index-url 'https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io/' coverage
           python -m coverage xml --ignore-errors
         shell: C:\cygwin\bin\env.exe CYGWIN_NOWINPATH=1 CHERE_INVOKING=1 C:\cygwin\bin\bash.exe -leo pipefail -o igncr {0}
       - name: Publish coverage
@@ -216,7 +222,7 @@ jobs:
     #    already tested via unit tests (or other tests not classified here as
     #    "integration")
     # With that in mind, the integration tests can run for a single setup
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
@@ -225,13 +231,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install build-essential gfortran libopenblas-dev libyaml-dev
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: MatteoH2O1999/setup-python@v4
         with:
           # Use a release that is not very new but still have a long life:
           python-version: "3.10"
       - name: Install tox
         run: |
-          python -m pip install tox
+          python -m pip install --index-url 'https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io/' tox
       - name: Run integration tests
         run: tox -e integration
 
@@ -241,16 +247,16 @@ jobs:
     needs:
     - check
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: MatteoH2O1999/setup-python@v4
         with:
           python-version: 3.x
       - name: Install tox
-        run: python -m pip install tox
+        run: python -m pip install --index-url 'https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io/' tox
       - name: Run
         run: tox -e release
         env:
