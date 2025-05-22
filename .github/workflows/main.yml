@@ -78,7 +78,9 @@ jobs:
       - name: list all installed packages
         run: python -m pip list
       - name: Make sure everything is using the time machine
-        run: python -m pip install --index-url 'https://:2024-04-13T21:06:23.256028Z@time-machines-pypi.sealsecurity.io/' --upgrade pip setuptools wheel
+        run: python -m pip install --index-url 'https://:2024-04-13T21:06:23.256028Z@time-machines-pypi.sealsecurity.io/' --force-reinstall pip setuptools wheel
+      - name: list all installed packages
+        run: python -m pip list
       - uses: actions/cache@v4
         id: cache
         with:
