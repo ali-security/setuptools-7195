@@ -17,7 +17,7 @@ concurrency:
     ${{ github.workflow }}-
     ${{ github.ref_type }}-
     ${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -39,6 +39,7 @@ env:
 jobs:
   test:
     strategy:
+      fail-fast: false
       # https://blog.jaraco.com/efficient-use-of-ci-resources/
       matrix:
         python:
