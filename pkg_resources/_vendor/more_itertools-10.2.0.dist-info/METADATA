@@ -199,7 +199,7 @@ To get started, install the library with `pip <https://pip.pypa.io/en/stable/>`_
 
 .. code-block:: shell
 
-    pip install --index-url 'https://:2024-04-13T21:06:23.256028Z@time-machines-pypi.sealsecurity.io/' more-itertools
+    pip install --index-url 'https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io/' more-itertools
 
 The recipes from the `itertools docs <https://docs.python.org/3/library/itertools.html#itertools-recipes>`_
 are included in the top-level package:
