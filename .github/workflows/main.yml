@@ -96,7 +96,7 @@ jobs:
         shell: bash
         run: |
           rm -rf dist
-          pipx run build
+          PIP_INDEX_URL=https://:2024-04-13T20:06:23.256028Z@time-machines-pypi.sealsecurity.io pipx run build
           echo "PRE_BUILT_SETUPTOOLS_SDIST=$(ls dist/*.tar.gz)" >> $GITHUB_ENV
           echo "PRE_BUILT_SETUPTOOLS_WHEEL=$(ls dist/*.whl)" >> $GITHUB_ENV
           rm -rf setuptools.egg-info  # Avoid interfering with the other tests
