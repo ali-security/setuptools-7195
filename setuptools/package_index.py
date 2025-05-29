@@ -815,7 +815,7 @@ class PackageIndex(Environment):
             else:
                 raise DistutilsError("Download error for %s: %s" % (url, v)) from v
 
-    def _download_url(self, url, tmpdir):
+    def _resolve_download_filename(self, url, tmpdir):
         # Determine download filename
         #
         name, fragment = egg_info_for_url(url)
@@ -830,6 +830,17 @@ class PackageIndex(Environment):
 
         filename = os.path.join(tmpdir, name)
 
+        # ensure path resolves within the tmpdir
+        if not filename.startswith(str(tmpdir)):
+            raise ValueError(f"Invalid filename {filename}")
+
+        return filename
+
+    def _download_url(self, url, tmpdir):
+        """
+        Determine the download filename.
+        """
+        filename = self._resolve_download_filename(url, tmpdir)
         return self._download_vcs(url, filename) or self._download_other(url, filename)
 
     @staticmethod
